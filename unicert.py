@@ -2,13 +2,13 @@
 # -*- coding: utf-8 -*-
 """
 Name: KCertGen
-Author: K4YT3X
+Dev: K4YT3X
 Date Created: September 28, 2018
-Last Modified: November 12, 2018
+Last Modified: November 14, 2018
 
 Licensed under the GNU General Public License Version 3 (GNU GPL v3),
     available at: https://www.gnu.org/licenses/gpl-3.0.txt
-    (C) 2018 K4YT3X
+(C) 2018 K4YT3X
 """
 
 from avalon_framework import Avalon
@@ -215,7 +215,7 @@ def command_interpreter(commands):
 def print_welcome():
     """ Print program name and legal information
     """
-    print('K4YT3X Certificate Generator {}'.format(VERSION))
+    print('UniCert {}'.format(VERSION))
     print('(C) 2018 K4YT3X')
     print('Licensed under GNU GPL v3')
 
