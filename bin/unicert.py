@@ -1,14 +1,14 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Name: KCertGen
+Name: Unicert
 Dev: K4YT3X
 Date Created: September 28, 2018
-Last Modified: November 14, 2018
+Last Modified: March 12, 2019
 
 Licensed under the GNU General Public License Version 3 (GNU GPL v3),
     available at: https://www.gnu.org/licenses/gpl-3.0.txt
-(C) 2018 K4YT3X
+(C) 2018-2019 K4YT3X
 """
 
 from avalon_framework import Avalon
@@ -18,7 +18,7 @@ import subprocess
 import sys
 import traceback
 
-VERSION = '1.0.0'
+VERSION = '1.0.1'
 COMMANDS = [
     'GenCaCert',
     'GenUserCert',
@@ -53,47 +53,63 @@ class ShellCompleter(object):
 
 
 class CACert:
+    """ Objects of this class represent user certificates
+    """
 
-    def __init__(self, output_directory):
-        self.output_directory = output_directory
+    def __init__(self, containing_directory):
+        self.containing_directory = containing_directory
 
-        if not os.path.isdir(self.output_directory):
-            os.mkdir(self.output_directory)
+        if not os.path.isdir(self.containing_directory):
+            os.mkdir(self.containing_directory)
 
-        self.ca_key = '{}/ca-key.pem'.format(self.output_directory)
-        self.ca_cert = '{}/ca-cert.pem'.format(self.output_directory)
-        self.ca_template = '{}/ca.tmpl'.format(self.output_directory)
+        self.ca_key = '{}/ca-key.pem'.format(self.containing_directory)
+        self.ca_cert = '{}/ca-cert.pem'.format(self.containing_directory)
+        self.ca_template = '{}/ca.tmpl'.format(self.containing_directory)
         self.common_name = ''
         self.organization = ''
 
     def generate(self):
+        """ Generate CA certificates
+        """
         self.get_parameters()
         self._gen_ca_template()
         self._gen_ca_privkey()
         self._gen_ca_cert()
 
     def get_parameters(self):
+        """ Get common name and Org name from user
+        """
         while self.common_name == '':
             self.common_name = Avalon.gets('CA Common Name: ')
         while self.organization == '':
             self.organization = Avalon.gets('Organization Name: ')
 
     def _gen_ca_privkey(self):
+        """ Generate CA private key
+        """
         os.system('certtool --generate-privkey --outfile {}'.format(self.ca_key))
 
     def _gen_ca_template(self):
+        """ Generate CA template file
+
+        Generate CA template file for certtool.
+        """
         with open(self.ca_template, 'w') as ca_template:
             ca_template.write('cn = "{}"\norganization = "{}"\nserial = 1\nexpiration_days = -1\nca\nsigning_key\ncert_signing_key\ncrl_signing_key'.format(
                 self.common_name, self.organization))
             ca_template.close()
 
     def _gen_ca_cert(self):
+        """ Generate CA certificates with certtool and the template
+        """
         commands = ['certtool', '--generate-self-signed', '--load-privkey',
                     self.ca_key, '--template', self.ca_template, '--outfile', self.ca_cert]
         subprocess.run(commands)
 
 
 class UserCert:
+    """ Objects of this class represent user certificates
+    """
 
     def __init__(self, username, password, ca_directory):
         self.username = username
@@ -107,16 +123,16 @@ class UserCert:
 
         # Set GNUTLS_PIN variable
         os.environ['GNUTLS_PIN'] = self.password
-        self.output_directory = '{}/{}'.format(self.ca_directory, self.username)
+        self.containing_directory = '{}/{}'.format(self.ca_directory, self.username)
 
-        if not os.path.isdir(self.output_directory):
-            os.mkdir(self.output_directory)
+        if not os.path.isdir(self.containing_directory):
+            os.mkdir(self.containing_directory)
 
         # Set paths
-        self.user_key = '{}/{}-key.pem'.format(self.output_directory, self.username)
-        self.user_cert = '{}/{}-cert.pem'.format(self.output_directory, self.username)
-        self.user_p12 = '{}/{}.p12'.format(self.output_directory, self.username)
-        self.user_template = '{}/{}.tmpl'.format(self.output_directory, self.username)
+        self.user_key = '{}/{}-key.pem'.format(self.containing_directory, self.username)
+        self.user_cert = '{}/{}-cert.pem'.format(self.containing_directory, self.username)
+        self.user_p12 = '{}/{}.p12'.format(self.containing_directory, self.username)
+        self.user_template = '{}/{}.tmpl'.format(self.containing_directory, self.username)
 
         # Start generation
         self._gen_template()
@@ -176,8 +192,7 @@ def command_interpreter(commands):
     """
     try:
         # Try to guess what the user is saying
-        possibilities = [
-            s for s in COMMANDS if s.lower().startswith(commands[1])]
+        possibilities = [s for s in COMMANDS if s.lower().startswith(commands[1])]
         if len(possibilities) == 1:
             commands[1] = possibilities[0]
 
@@ -215,15 +230,13 @@ def command_interpreter(commands):
 def print_welcome():
     """ Print program name and legal information
     """
-    print('UniCert {}'.format(VERSION))
-    print('(C) 2018 K4YT3X')
+    print('Unicert {}'.format(VERSION))
+    print('(C) 2018-2019 K4YT3X')
     print('Licensed under GNU GPL v3')
 
 
 def main():
-    """ WireGuard Mesh Configurator main function
-
-    This function controls the main flow of this program.
+    """ Unicert main function
     """
 
     try:
@@ -261,6 +274,7 @@ def main():
         exit(1)
 
 
+# For now, this file is not to be used as a library
 if __name__ == '__main__':
 
     # Launch main function
