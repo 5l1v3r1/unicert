@@ -18,10 +18,11 @@ import subprocess
 import sys
 import traceback
 
-VERSION = '1.0.1'
+VERSION = '1.1.0'
 COMMANDS = [
     'GenCaCert',
     'GenUserCert',
+    'GenServerCert',
     'Exit',
     'Quit',
 ]
@@ -166,6 +167,48 @@ class UserCert:
         Avalon.info('Done')
 
 
+class ServerCert:
+    """ Objects of this class represent user certificates
+    """
+
+    def __init__(self, common_name, dns_name, organization, ca_directory):
+        self.common_name = common_name
+        self.dns_name = dns_name
+        self.organization = organization
+        self.ca_directory = ca_directory
+        self.ca_key = '{}/ca-key.pem'.format(self.ca_directory)
+        self.ca_cert = '{}/ca-cert.pem'.format(self.ca_directory)
+
+    def generate(self):
+
+        self.containing_directory = self.ca_directory
+
+        # Set paths
+        self.server_key = '{}/server-key.pem'.format(self.containing_directory)
+        self.server_cert = '{}/server-cert.pem'.format(self.containing_directory)
+        self.server_template = '{}/server.tmpl'.format(self.containing_directory)
+
+        # Start generation
+        self._gen_template()
+        self._gen_server_key()
+        self._gen_server_cert()
+
+    def _gen_template(self):
+        with open(self.server_template, 'w') as server_template:
+            server_template.write('cn = "{}"\ndns_name = "{}"\norganization = "{}"\nexpiration_days = -1\nsigning_key\nencryption_key\ntls_www_server'.format(self.common_name, self.dns_name, self.organization))
+            server_template.close()
+
+    def _gen_server_key(self):
+        Avalon.info('Generating server key')
+        subprocess.run(['certtool', '--generate-privkey', '--outfile', self.server_key])
+        Avalon.info('Done')
+
+    def _gen_server_cert(self):
+        Avalon.info('Generating server certificate')
+        subprocess.run(['certtool', '--generate-certificate', '--load-privkey', self.server_key, '--load-ca-certificate', self.ca_cert, '--load-ca-privkey', self.ca_key, '--template', self.server_template, '--outfile', self.server_cert])
+        Avalon.info('Done')
+
+
 def print_help():
     """ Print help messages
     """
@@ -175,6 +218,7 @@ def print_help():
         'Interactive  // launch interactive shell',
         'GenCaCert',
         'GenUserCert',
+        'GenServerCert',
         'Exit',
         'Quit',
         '',
@@ -208,6 +252,10 @@ def command_interpreter(commands):
         elif commands[1].lower() == 'genusercert':
             usercert = UserCert(commands[2], commands[3], commands[4])
             usercert.generate()
+            result = 0
+        elif commands[1].lower() == 'genservercert':
+            servercert = ServerCert(commands[2], commands[3], commands[4], commands[5])
+            servercert.generate()
             result = 0
         elif commands[1].lower() == 'exit' or commands[1].lower() == 'quit':
             Avalon.warning('Exiting')
